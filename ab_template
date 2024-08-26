@@ -1,19 +1,20 @@
 # Reference: https://rpubs.com/Argaadya/bayesian_ab
 
-# Libraries
+## Libraries ##
 library(tidyverse)
 library(gridExtra)
 library(scales)
 
 ################### DATA INPUT ############################
 ###########################################################
-# Traffic Data                                            
+
+## Traffic Data ##                                           
 control_total_visits <- 13566                            
 test_total_visits <- 13522                          
 control_conversions <- 5980                              
 test_conversions <- 6033                                 
 
-# Priors                                                  
+## Priors ##                                              
 prior_control_alpha <- 1                                  
 prior_control_beta <- 1                                
 prior_test_alpha <- 1                                   
@@ -21,7 +22,7 @@ prior_test_beta <- 1
 ##################### DATA INPUT ##########################
 ###########################################################  
 
-# Data Frame
+## Data Frame ##
 control_non_conversions <- control_total_visits - control_conversions
 test_non_conversions <- test_total_visits - test_conversions
 control_conversion_rate <- control_conversions/control_total_visits
@@ -34,7 +35,7 @@ df <- data.frame(group = c("control","treatment"),
                  conversion_rate = c(control_conversion_rate,test_conversion_rate))
 df
 
-# Prior
+## Prior ##
 control_prior <- function(x) dbeta(x,prior_control_alpha,prior_control_beta) # creation of control prior beta distribution function that will be used to plot
 test_prior <- function(x) dbeta(x,prior_test_alpha,prior_test_beta) # creation of prior test beta distribution function that will be used to plot
 
@@ -63,7 +64,7 @@ b <- ggplot() +                                    # plot prior distribution for
        x = "Probability")
 
 
-# Likelihood
+## Likelihood ##
 likelihood_control_alpha <- df[1,3]     # likelihood of control alpha
 likelihood_control_beta <- df[1,4]      # likelihood of control beta
 
@@ -79,6 +80,7 @@ like_rbeta_control <- rbeta(1:10000,                              # pulling rand
 like_rbeta_test <- rbeta(1:10000,                                 # pulling random values from likelihood test distribution to find median.  This is used in attempt to dynamically set xlim below.
                          likelihood_test_alpha,
                          likelihood_test_beta)
+
 median1 <- round(median(like_rbeta_control),2)
 median2 <- round(median(like_rbeta_test),2)
 
@@ -119,7 +121,7 @@ n<-ggplot() +
   scale_y_continuous(breaks = function(x) seq(0,range(x)[2],by = 10))  # breaks ensures same x axis values as plot above (m)
 
 
-# Posterior
+## Posterior ##
 fun_beta_control <- function(x) dbeta(x,                                               # creation of control posterior beta distribution function that will be used to plot
                                       prior_control_alpha + likelihood_control_alpha,
                                       prior_control_beta + likelihood_control_beta)
@@ -151,17 +153,8 @@ post_comp<-data.frame(x = seq(0,1,length.out = 1e4)) %>%      # This graph compa
   theme(legend.position = 'bottom') +
   scale_x_continuous(limits = c(.425,.465),labels = percent_format())
 post_comp  
-# scale_x_continuous(limits = 
-#                      c(
-#                        ifelse(median3 < median4,median3 - .03,median4 - .03),
-#                        ifelse(median3 > median4,median3 + .03,median4 + .03)),
-#                    breaks = seq(
-#                      ifelse(median3 < median4,median3 - .03,median4 - .03), 
-#                      ifelse(median3 > median4,median3 + .03,median4 + .03),
-#                      .01),
-#                    labels = percent_format())
 
-# Simulation
+## Simulation ##
 n_trial <- 1e6
 set.seed(123)
 sample_control <- rbeta(n_trial,                                        # Take random simulated values from control posterior distribution
@@ -171,7 +164,7 @@ sample_test <- rbeta(n_trial,                                           # Take r
                      prior_test_alpha + likelihood_test_alpha,
                      prior_test_beta + likelihood_test_beta)
 
-# Posterior Distribution Comparison
+## Posterior Distribution Comparison ##
 superior_prob <- sum(sample_test > sample_control) / n_trial          # To find the probability that one version will perform better than the other, sum number of occurrences in which one version is better and divide by total trials.
 superior_prob
 
@@ -183,7 +176,7 @@ df_diff <- data.frame(x = dens_diff$x,y = dens_diff$y)
 
 o <- df_diff %>%
   mutate(type = ifelse(x < 0, 'full', 'part'))
-head(o)
+
 p <- ggplot(o,aes(x,y,fill = type)) +
   geom_ribbon(aes(xmin = x,xmax = x,ymin = 0, ymax = y),
               alpha = .75) +
@@ -244,14 +237,13 @@ r<-ggplot(NULL,aes(x,y, fill = type)) +
            y = quantile(q$y,probs = .75),
            label = percent(median(sample_diff),accuracy = .01),
            size = 5)
-r
+
 con <- function(n_trial) dbeta(n_trial,prior_control_alpha + likelihood_control_alpha,prior_control_beta + likelihood_control_beta)  # Creation of beta distribution density of control
 t <- function(n_trial) dbeta(n_trial,prior_test_alpha + likelihood_test_alpha,prior_test_beta + likelihood_test_beta)   # Creation of beta distribution density of test
 
 msample_control <- mean(sample_control)
 msample_test <- mean(sample_test)
 
-# win_fun <- ifelse(mean(sample_control) > mean(sample_test),con,t)  # Selection of function of winning variation which was determined by comparing the means.
 
 q2 <- function(msample_control,msample_test)         # Function that selects distribution of winning variation
 {ifelse(mean(sample_control) > mean(sample_test),
@@ -275,7 +267,6 @@ lemur <- zed%>%filter(type == "out")
 monkey <- zed%>%filter(type == "out2")
 
 median5 <- round(median(q2),2)               # median is calculated here in attempt to dynamically set xlim in graph below
-
 
 s <- ggplot(NULL, aes(x,y,fill = type)) +   # This graph is the posterior distribution of the winning variation with Conversion Rate as the x-axis
   geom_ribbon(data = lemur,aes(xmin = x,xmax = x,ymin = 0,ymax = y),
@@ -315,20 +306,18 @@ s <- ggplot(NULL, aes(x,y,fill = type)) +   # This graph is the posterior distri
            y = quantile(zed$y,probs = .8),
            label = percent(median(q2),accuracy = .01),
            size = 5)
-s
 
-# Absolute Potential Loss for Control
+
+## Absolute Potential Loss for variations ##
 control_PL <- mean(ifelse(sample_test - sample_control < 0,
                           0,
                           sample_test - sample_control))
 
-# Absolute Potential Loss for Test
 test_PL <- mean(ifelse(sample_control - sample_test < 0,
                        0,
                        sample_control - sample_test))
 
-# Winner Declaration
-
+## Winner Declaration ##
 control_dec <- function(superior_prob,control_conversions,test_conversions,control_total_visits,test_total_visits) {
   TOC <<- (control_conversions / (control_total_visits + test_total_visits)) * .0075 * 100
   k <- ifelse(control_conversions >= 25
@@ -357,11 +346,6 @@ test_dec <- function(superior_prob,control_conversions,test_conversions,control_
 
 t_dec <- test_dec(superior_prob,control_conversions,test_conversions,control_total_visits,test_total_visits)
 
-
-1 - superior_prob
-superior_prob
-
-
 df2 <- data.frame(Variation = c("Control","Test"),
                   Expected_Conversion_Rate = c(percent(median(sample_control),
                                                        accuracy = .01),
@@ -380,24 +364,24 @@ df2 <- data.frame(Variation = c("Control","Test"),
 ################### DATA OUTPUT #############################################################
 #############################################################################################
 
-#  Data                                                                                     
+##  Data ##                                                                                    
 df
 df2
 
-# Prior Distribution Graphs                                                                 
+## Prior Distribution Graphs ##                                                                
 grid.arrange(a,b,nrow = 1,ncol = 2)                                                         
 
-# Likelihood Distribution Graphs                                                            
+## Likelihood Distribution Graphs ##                                                            
 grid.arrange(m,n,nrow = 1, ncol = 2)                                                        
 
-# Posterior Comparison Graphs                                                               
+## Posterior Comparison Graphs ##                                                              
 post_comp                                                                                   
 p                                                                                           
 r                                                                                           
 s                                                                                           
 median(sample_diff)
 
-# Posterior Results                                                                         
+## Posterior Results ##                                                                       
 paste("Probability that test will perform better than the control:",round(superior_prob,4)) 
 paste("Median improvement of test over control:",round(median(sample_diff),4))              
 
@@ -405,8 +389,4 @@ quantile(sample_control,probs = c(.005,.995))
 quantile(sample_test,probs = c(.005,.995))                                                  
 quantile(sample_diff,probs = c(.005,.995))
 
-################### Data Output #############################################################    
-
-
-df2
-
+################### Data Output ############################################################# 
