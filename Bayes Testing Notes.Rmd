@@ -1,0 +1,329 @@
+---
+title: "Bayesian Testing Notes"
+output: 
+  html_document:
+    toc: yes
+    df_print: paged
+    code_folding: hide
+  html_notebook:
+    toc: yes
+    toc_float: yes
+---
+
+
+```{r packages, echo=TRUE,warning=FALSE,message=FALSE}
+# Libraries
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(scales)
+```
+
+# Overview
+Bayesian inference is based on the Bayes' Rule which is a formula for updating our prior beliefs based on data.  It consists of four parts: *posterior, prior, likelihood,* and *marginal probability*.  ***posterior* =  (*prior* x *likelihood*) /  *marginal probability***.  
+
+The ***prior*** is simply what is believed prior to seeing the data.  This could be subjective in nature, but it can also be backed by objective data based on prior experiments and research.
+
+The ***likelihood*** is the probability of the data given the data.
+
+The ***posterior*** is the result of multiplying the *prior* and the *likelihood*.  This *posterior* can then be used as the *prior* in the calculation of a new *posterior* backed by more data.
+
+Since the ***marginal probability*** often involves advanced calculus (e.g. when the probability is a continuous variable) and may be extremely difficult, if not impossible, to calculate, simulation methods are often used to accurately approximate the true value of the posterior.
+
+Using the **Beta Distribution**, here is a graphical representation of the learning process flow: ***prior* x *likelihood* ∝ *posterior***
+```{r, Beta Distribution, echo=TRUE}
+fun_beta <- function(x) dbeta(x,2,8)     # e.g. prior
+fun_beta.2 <- function(x) dbeta(x,5,14)  # e.g. likelihood
+fun_beta.3 <- function(x) dbeta(x,7,22)  # e.g. posterior
+ggplot() +
+  geom_function(fun = fun_beta,
+                aes(color = "PRIOR: dbeta(shape1 = 2 | shape2 = 8)"),
+                linewidth = 2) +
+  geom_function(fun = fun_beta.2,
+                aes(color = "LIKELIHOOD: dbeta(shape1 = 5 | shape2 = 14)"),
+                linewidth = 2) +
+  geom_function(fun = fun_beta.3,
+                aes(color = "POSTERIOR: dbeta(shape1 = 7 | shape2 = 22)"),
+                linewidth = 2) +
+    theme_bw() +
+theme(legend.position = "bottom") +
+   labs(title = "Beta Probability Density",
+       x = "Probability",
+       y = "Density") +
+  guides(colour = guide_legend(ncol =1, title = ""))+
+  scale_color_discrete(breaks = c(paste("PRIOR: dbeta(shape1 = 2 | shape2 = 8)"),
+                                  paste("LIKELIHOOD: dbeta(shape1 = 5 | shape2 = 14)"),
+                                  paste("POSTERIOR: dbeta(shape1 = 7 | shape2 = 22)")))
+
+```
+
+# Comparison to Frequentist Statistics
+  There are several  benefits of the Bayesian statistics over the more traditional frequentist approach:
+  
+  *Intuition*: Bayesian statistics lends itself to an approach that mimics a natural process of learning.  We begin with a belief (the *prior*).  That belief is confirmed or challenged with objective data (the *likelihood*), leaving us with a modified *posterior* belief.  The more data we have, the more accurate our belief.
+  
+  *Interpretation*: Bayesian inference results are also easier to interpret and communicate to stakeholders, especially in terms of the confidence. Confidence levels are often misinterpreted by stakeholders as the percentage certainty that the true mean or proportion lies between the confidence interval.  Frequentist confidence intervals in reality are a statement of confidence in the procedure rather than a direct probability statement of the model.  Bayesian credible intervals, on the other hand, do provide direct statements of probability of the data at hand and are, therefore, more intuitive.
+  
+  *Theory*: The frequentist methodology relies on the concept of the true parameter value which is the result of an infinite number of trials, a value which cannot be ever known with certainty.  The Bayes methodology establishes the probability based on a prior and the data at hand.  It considers the probability given the data as opposed to considering the data given the probability.\
+  Secondly, the frequentist methodology is inherently biased towards the *null* hypothesis.  For example, if the p-value is above the determined threshold of .05, instead of "accepting" the *null* hypothesis, we "fail to reject" the *null* hypothesis.  This means that technically, we don't claim to know if the null is true; there just isn't enough evidence to say that it is not true.
+  
+  *Other*: In practice, if we compare frequentist A/B or MVT tests with a level of significance equal to .05 and 80% statistical power to the Bayesian methodology, the latter will reach a conclusion relatively faster.
+  
+  A common critique to the Bayesian methodology, however, is the inherent level of subjectivity in establishing a prior.
+
+
+# Bayesian Inference with Example
+## 1. Get Data
+The data below is a prefabricated, but it serves as an example of the data required to run A/B testing.
+
+```{r GET DATA, echo=TRUE}
+data_agg <- data.frame(group = c("control","treatment"),
+                       landing_page = c("Old Page", "New Page"),
+                       total_visit = c(145274,145311),
+                       conversion = c(17489,17264),
+                       not_converted = c(127785,128047),
+                       conversion_rate = c(0.1203863,0.1188072))
+data_agg
+
+```
+
+## 2. Define Prior
+The *prior* reflects a belief about how we expect the different versions of the web page to perform.  We will quantify our prior belief using the **Beta Distribution**, which takes the form Beta(alpha,beta) or Beta(shape1,shape2).  In our case, *alpha* represents the number of visitors to the webpage that converted, and *beta* represents the number of visitors that did not convert.  The higher *alpha* and *beta*, the more data we have and thus, the stronger our prior belief.
+
+In this example, we expect a 20% conversion rate for the control, so we will use Beta (2,8).  For the test version of the webpage, however, we expect a higher conversion rate, so we will use Beta (6,4).  In practice, the conversion rates for the two versions could use the same Beta Distribution, and likely would use Beta values that reflect only a slight change in conversion rate.
+
+Note: A Beta(20,80) would also represent the same conversion rate for the control, but the density would be more concentrated around 20% and would imply a stronger held prior belief.  This, in turn, would more heavily influence the *posterior*.
+
+```{r DEFINE PRIOR, echo=TRUE,fig.dim=c(12,6)}
+control_prior_alpha <- 2
+control_prior_beta <- 8
+test_prior_alpha <- 4
+test_prior_beta <- 6
+
+control_prior <- function(x) dbeta(x,control_prior_alpha,control_prior_beta)
+test_prior <- function(x) dbeta(x,test_prior_alpha,test_prior_beta)
+
+a <- ggplot() +
+  geom_function(fun = control_prior,
+                aes(color = "#F8766D"),
+                linewidth = 2) +
+  theme_bw() +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(labels = percent_format()) +
+  labs(title = paste("Beta(",control_prior_alpha,",",control_prior_beta,")"),
+       y = "Density",
+       x = "Probability") 
+
+b <- ggplot() +
+  geom_function(fun = test_prior, 
+                aes(color = "#F8766D"),
+                linewidth = 2) +
+  theme_bw() +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(labels = percent_format()) +
+  labs(title = paste("Beta(",test_prior_alpha,",",test_prior_beta,")"),
+       y = "Density",
+       x = "Probability")
+
+grid.arrange(a,b,nrow = 1,ncol = 2)
+```
+
+## 3. Define Likelihood
+The *likelihood* can be derived from the A/B test data. Similar to our prior, the *alpha*/*shape1* will represent the conversions.  *beta*/*shape2* will represent non-conversions. There will be an *alpha* and *beta* for both the control and the test.\
+\
+Control *alpha*: `r as.character(data_agg[1,4])`\
+Control *beta*: `r as.character(data_agg[1,5])`\
+Test *alpha*: `r as.character(data_agg[2,4])` \
+Test *beta*: `r as.character(data_agg[2,5])`
+```{r Likelihood,echo=TRUE,fig.dim=c(12,6)}
+# control likelihood (alpha,beta)
+likelihood_control_alpha <- data_agg[1,4]
+likelihood_control_beta <- data_agg[1,5]
+
+#test page likelihood (alpha,beta)
+likelihood_test_alpha <- data_agg[2,4]
+likelihood_test_beta<- data_agg[2,5]
+
+likefun_control <- function(x) dbeta(x, likelihood_control_alpha, likelihood_control_beta)
+likefun_test <- function(x) dbeta(x, likelihood_test_alpha,likelihood_test_beta)
+
+
+m<-ggplot() +
+  geom_function(fun = likefun_control,
+                aes(color = "#F8766D"),
+                linewidth = 2) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(title = paste("Beta(",likelihood_control_alpha,",",likelihood_control_beta,")"),
+       x = "Probability",
+       y = "Density") + 
+  scale_x_continuous(limits = c(0.115, 0.125),
+                     labels = percent_format())
+
+n<-ggplot() +
+  geom_function(fun = likefun_test,
+                aes(color = "#F8766D"),
+                linewidth = 2) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(title = paste("Beta(",likelihood_test_alpha,",",likelihood_test_beta,")"),
+       x = "Probability",
+       y = "Density") + 
+  scale_x_continuous(limits = c(0.115, 0.125),
+                     labels = percent_format())
+
+grid.arrange(m,n,nrow = 1, ncol = 2)
+```
+
+## 4. Calculate Posterior
+After having established the priors and the likelihoods in the form of a Beta Distribution, we can now derive our posterior distribution.  Essentially, we add the control and test prior *alphas* to the control and test likelihood *alphas* and the prior *betas* to both the corresponding likelihood *betas*.  Any overlap between the two distributions indicates uncertainty.
+
+```{r Posterior, echo=TRUE,dim = c(12,6)}
+fun_beta_control <- function(x) dbeta(x, control_prior_alpha + data_agg$conversion[1], control_prior_beta + data_agg$not_converted[1])
+fun_beta_test <- function(x) dbeta(x, test_prior_alpha + data_agg$conversion[2], test_prior_beta + data_agg$not_converted[2])
+
+
+data.frame(x = seq(0, 1, length.out = 1e4)) %>% 
+  mutate(old = map_dbl(x,fun_beta_control),
+         new = map_dbl(x,fun_beta_test)
+  ) %>% 
+  pivot_longer(-x, names_to = "variant") %>% 
+  mutate(variant = ifelse(variant == "old", "Old Page", "New Page")) %>% 
+  ggplot(aes(x = x, y = value)) +
+  geom_ribbon(aes(fill = variant, xmin = x, xmax = x, ymin = 0, ymax = value),
+              alpha = 0.75) +
+  labs(x = "Conversion Rate", y = "Density",
+       title = "Posterior Probability of Conversion Rate",
+       fill = NULL) +
+  theme_bw() +
+  scale_x_continuous(limits = c(0.115, 0.125),
+                     labels = percent_format())
+```
+
+## 5. Simulation
+We have calculated the posterior distributions of each variant.  To better understand the difference between the two distributions, we will run 1e6 simulations with random samples from each distribution.  Each sample will be selected based on its probability in the distribution.  This ensures that samples in regions with higher probability appear more frequently.
+
+Then we will look at the quantiles and the 90% Credible Intervals of the simulated distributions.
+
+```{r quantile_control, echo=TRUE}
+n_trial <- 1e6
+
+set.seed(123)
+sample_control <- rbeta(n_trial,control_prior_alpha + data_agg$conversion[1],control_prior_beta + data_agg$not_converted[1]) 
+sample_test <- rbeta(n_trial,test_prior_alpha + data_agg$conversion[2],test_prior_beta + data_agg$not_converted[2])
+
+quantile(sample_control)
+```
+Quantile split of simulated control version
+
+```{r quantile_test, echo=TRUE}
+quantile(sample_test)
+```
+Quantile split of simulated test version
+
+```{r CI_control, echo=TRUE}
+quantile(sample_control, probs = c(0.05, 0.95))
+```
+Control 90% Interval split
+
+```{r CI_test, echo=TRUE}
+quantile(sample_test, probs = c(0.05, 0.95))
+```
+Test 90% Interval split
+
+## 6. Posterior Distribution Comparison
+With the simulation complete, we can compare the two posterior distributions by answering two questions:\
+1. Out of the 1e6 simulations that we ran, how much more often is the test superior or inferior to the control?\
+2. How much better is the test over the control or vice versa?  
+
+Given that the control seems to perform better than the test, to answer these questions we will take the count of control simulations that performed better than test simulations and divide that by the total number of trials (i.e. 1e6).
+
+Then we will subtract the test simulations from the control simulations and divide that by test simulations in order to find the percentage increase.
+
+
+```{r distribution comparison, echo=TRUE}
+
+superior_prob <- sum(sample_control > sample_test) / n_trial
+superior_prob
+
+# CALCULATE % IMPROVEMENT (How much better?)
+sample_diff <- (sample_control - sample_test) / sample_test
+mean(sample_diff)
+```
+
+**`r percent(superior_prob,accuracy = .01)`** represents the probability that the control will be better than the test.\
+**`r percent(mean(sample_diff),accuracy = .01)`** represents the average increase of the control over the test.
+
+After finding the density of average difference between the posterior distribution samples, we can visualize our findings.
+
+```{r distribution comparison graphs, echo=TRUE,fig.dim=c(12,6)}
+dens_diff <- density(sample_diff)
+
+df_diff <- data.frame(x = dens_diff$x,y = dens_diff$y)
+
+l <- df_diff %>% 
+  mutate(type = ifelse(x>0,'full','part')) %>%
+  ggplot(aes(x,y, fill = type)) +
+  geom_ribbon(aes(xmin = x, xmax =x , ymin = 0, ymax =  y),
+              alpha = 0.75, show.legend = F)  +
+  annotate("text",
+           x = .015, 
+           y = 15, 
+           label = percent(superior_prob,.01),
+           size = 5) +
+  annotate("text",
+           x = -.008,
+           y = 5, 
+           label = percent(1-superior_prob,.01),
+           size = 5) +
+  scale_fill_manual(values = c( "#F8766D", "#00BFC4")) +
+  scale_x_continuous(labels = label_percent(accuracy = 0.01)) +
+  labs(title = "% that Control Performs Better than Test",
+       x = "(A-B)/B", y = "Density") +
+  theme_bw()
+
+o <- df_diff %>%
+  mutate(type = 
+           ifelse(x < quantile(sample_diff,probs = .05),
+                  "out",
+                  ifelse(x > quantile(sample_diff,probs = .95), 
+                         "out2", 
+                         "in")))%>%
+  ggplot(aes(x,y, fill = type)) +
+  geom_ribbon(aes(xmin = x, xmax =x , ymin = 0, ymax =  y),
+              alpha = 0.75, show.legend = F)  +
+  labs(title = "90% Credible Interval and Mean",
+       x = "(A-B)/B", y = "Density") +
+  scale_fill_manual(values = c( "#F8766D", "#00BFC4","#00BFC4")) +
+  theme_bw() +
+#  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(labels = label_percent(accuracy = .01)) +
+  geom_vline(xintercept = quantile(sample_diff,probs = .05),
+             linetype = 3,
+             lwd = 1) +
+  annotate("text",
+           x = quantile(sample_diff,probs = .05)-.007,
+           y = 21,
+           label = percent(quantile(sample_diff,probs = .05),accuracy = .01),
+           size = 5) +
+  geom_vline(xintercept = quantile(sample_diff,probs = .95), 
+             linetype = 3, 
+             lwd = 1) +
+  annotate("text",
+           x = quantile(sample_diff,probs = .95)+.007,
+           y = 21,
+           label = percent(quantile(sample_diff,probs = .95),accuracy = .01),
+           size = 5) + 
+  geom_vline(xintercept = mean(sample_diff), 
+             linetype = 3, 
+             lwd = 1) +
+  annotate("text",
+           x = mean(sample_diff) + .007,
+           y = 17,
+           label = percent(mean(sample_diff),accuracy = .01),
+           size = 5)
+
+grid.arrange(l,o,nrow = 1, ncol = 2)
+```
