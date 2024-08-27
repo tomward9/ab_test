@@ -68,11 +68,21 @@ Then we will look at the quantiles and the 90% Credible Intervals of the simulat
 
 -- INSERT QUANTILES --
 
+## 6. Posterior Distribution Comparison
+With the simulation complete, we can compare the two posterior distributions by answering two questions:\
+1. Out of the 1e6 simulations that we ran, how much more often is the test superior or inferior to the control?\
+2. How much better is the test over the control or vice versa?  
 
+Given that the control seems to perform better than the test, to answer these questions we will take the count of control simulations that performed better than test simulations and divide that by the total number of trials (i.e. 1e6).
 
+Then we will subtract the test simulations from the control simulations and divide that by test simulations in order to find the percentage increase.
 
+**90.33%** represents the probability that the control will be better than the test.\
+**1.32%** represents the average increase of the control over the test.
 
+After finding the density of average difference between the posterior distribution samples, we can visualize our findings.
 
+-- INSERT FINAL TWO GRAPHS --
 
 
 
