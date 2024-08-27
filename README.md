@@ -12,7 +12,7 @@ Since the ***marginal probability*** often involves advanced calculus (e.g. when
 
 Using the **Beta Distribution**, here is a graphical representation of the learning process flow: ***prior* x *likelihood* ∝ *posterior***
 
--- INSERT BETA PROBABILITY DENSITY IMAGE --
+<img align="center" width="600" height="400" src="https://github.com/tomward9/ab_test/blob/main/Images/Beta%20Probability%20Density.png"> 
 
 # Comparison to Frequentist Statistics
   There are several  benefits of the Bayesian statistics over the more traditional frequentist approach:
@@ -33,7 +33,7 @@ Using the **Beta Distribution**, here is a graphical representation of the learn
 ### 1. Get Data
 The data below is a prefabricated, but it serves as an example of the data required to run A/B testing.
 
--- INSERT DATAFRAME --
+<img align="center" width="900" height="150" src="https://github.com/tomward9/ab_test/blob/main/Images/Dataframe.png">
 
 ### 2. Define Prior
 The *prior* reflects a belief about how we expect the different versions of the web page to perform.  We will quantify our prior belief using the **Beta Distribution**, which takes the form Beta(alpha,beta) or Beta(shape1,shape2).  In our case, *alpha* represents the number of visitors to the webpage that converted, and *beta* represents the number of visitors that did not convert.  The higher *alpha* and *beta*, the more data we have and thus, the stronger our prior belief.
@@ -43,23 +43,23 @@ In this example, we expect a 20% conversion rate for the control, so we will use
 Note: A Beta(20,80) would also represent the same conversion rate for the control, but the density would be more concentrated around 20% and would imply a stronger held prior belief.  This, in turn, would more heavily influence the *posterior*.
 
 
--- INSERT BETA DISTRIBUTION OF PRIOR --
+<img align="center" width="900" height="400" src="https://github.com/tomward9/ab_test/blob/main/Images/Prior%20Beta.png">
 
 ### 3. Define Likelihood
 The *likelihood* can be derived from the A/B test data. Similar to our prior, the *alpha*/*shape1* will represent the conversions.  *beta*/*shape2* will represent non-conversions. There will be an *alpha* and *beta* for both the control and the test.\
 \
-Control *alpha*: 17489
-Control *beta*: 127785
-Test *alpha*: 17264
+Control *alpha*: 17489\
+Control *beta*: 127785\
+Test *alpha*: 17264\
 Test *beta*: 128047
 
--- INSERT BETA DISTRIBUTION OF LIKELIHOOD --
+<img align="center" width="900" height="400" src="https://github.com/tomward9/ab_test/blob/main/Images/Likelihood%20Beta.png">
 
 
 ### 4. Calculate Posterior
 After having established the priors and the likelihoods in the form of a Beta Distribution, we can now derive our posterior distribution. Essentially, we add the control and test prior *alphas* to the control and test likelihood *alphas* and the prior *betas* to both the corresponding likelihood *betas*.  Any overlap between the two distributions indicates uncertainty.
 
--- INSERT BETA POSTERIOR COMPARISON --
+<img align="center" width="700" height="500" src="https://github.com/tomward9/ab_test/blob/main/Images/Posterior%20Comparison.png">
 
 ### 5. Simulation
 We have calculated the posterior distributions of each variant.  To better understand the difference between the two distributions, we will run 1e6 simulations with random samples from each distribution.  Each sample will be selected based on its probability in the distribution.  This ensures that samples in regions with higher probability appear more frequently.
