@@ -2,13 +2,15 @@
 
 Bayesian inference is based on the Bayes' Rule which is a formula for updating our prior beliefs based on data.  It consists of four parts: *posterior, prior, likelihood,* and *marginal probability*.  ***posterior* =  (*prior* x *likelihood*) /  *marginal probability***.  
 
+<img align="center" width="650" height="200" src="https://github.com/tomward9/ab_test/blob/main/Images/Bayes%20Rule.png"> 
+
 The ***prior*** is simply what is believed prior to seeing the data.  This could be subjective in nature, but it can also be backed by objective data based on prior experiments and research.
 
 The ***likelihood*** is the probability of the data given the data.
 
 The ***posterior*** is the result of multiplying the *prior* and the *likelihood*.  This *posterior* can then be used as the *prior* in the calculation of a new *posterior* backed by more data.
 
-Since the ***marginal probability*** often involves advanced calculus (e.g. when the probability is a continuous variable) and may be extremely difficult, if not impossible, to calculate, simulation methods are often used to accurately approximate the true value of the posterior.
+The ***marginal probability*** is used to normalized the equation such that the result is a probability. It often involves advanced calculus (e.g. when the probability is a continuous variable) and may be extremely difficult, if not impossible, to calculate, simulation methods are often used to accurately approximate the true value of the posterior.
 
 Using the **Beta Distribution**, here is a graphical representation of the learning process flow: ***prior* x *likelihood* ∝ *posterior***
 
@@ -66,7 +68,7 @@ We have calculated the posterior distributions of each variant.  To better under
 
 Then we will look at the quantiles and the 90% Credible Intervals of the simulated distributions.
 
--- INSERT QUANTILES --
+<img align="center" width="900" height="500" src="https://github.com/tomward9/ab_test/blob/main/Images/quantiles.png">
 
 ## 6. Posterior Distribution Comparison
 With the simulation complete, we can compare the two posterior distributions by answering two questions:\
@@ -82,7 +84,7 @@ Then we will subtract the test simulations from the control simulations and divi
 
 After finding the density of average difference between the posterior distribution samples, we can visualize our findings.
 
--- INSERT FINAL TWO GRAPHS --
+<img align="center" width="900" height="400" src="https://github.com/tomward9/ab_test/blob/main/Images/CI.png">
 
 
 
