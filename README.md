@@ -23,7 +23,7 @@ Using the **Beta Distribution**, here is a graphical representation of the learn
   
   *Interpretation*: Bayesian inference results are also easier to interpret and communicate to stakeholders, especially in terms of the confidence. Confidence levels are often misinterpreted by stakeholders as the percentage certainty that the true mean or proportion lies between the confidence interval.  Frequentist confidence intervals in reality are a statement of confidence in the procedure rather than a direct probability statement of the model.  Bayesian credible intervals, on the other hand, do provide direct statements of probability of the data at hand and are, therefore, more intuitive.
   
-  *Theory*: The frequentist methodology relies on the concept of the true parameter value which is the result of an infinite number of trials, a value which cannot be ever known with certainty.  The Bayes methodology establishes the probability based on a prior and the data at hand.  It considers the probability given the data as opposed to considering the data given the probability.\
+  *Theory*: The frequentist methodology relies on the concept of the true parameter value which is the result of an infinite number of trials, a value which cannot be never known with certainty.  The Bayes methodology establishes the probability based on a prior and the data at hand.  It considers the probability given the data as opposed to considering the data given the probability.\
   Secondly, the frequentist methodology is inherently biased towards the *null* hypothesis.  For example, if the p-value is above the determined threshold of .05, instead of "accepting" the *null* hypothesis, we "fail to reject" the *null* hypothesis.  This means that technically, we don't claim to know if the null is true; there just isn't enough evidence to say that it is not true.
   
   *Other*: In practice, if we compare frequentist A/B or MVT tests with a level of significance equal to .05 and 80% statistical power to the Bayesian methodology, the latter will reach a conclusion relatively faster.
@@ -71,8 +71,8 @@ Then we will look at the quantiles and the 90% Credible Intervals of the simulat
 <img align="center" width="900" height="500" src="https://github.com/tomward9/ab_test/blob/main/Images/quantiles.png">
 
 ## 6. Posterior Distribution Comparison
-With the simulation complete, we can compare the two posterior distributions by answering two questions:\
-1. Out of the 1e6 simulations that we ran, how much more often is the test superior or inferior to the control?\
+With the simulation complete, we can compare the two posterior distributions by answering two questions:
+1. Out of the 1e6 simulations that we ran, how much more often is the test superior or inferior to the control?
 2. How much better is the test over the control or vice versa?  
 
 Given that the control seems to perform better than the test, to answer these questions we will take the count of control simulations that performed better than test simulations and divide that by the total number of trials (i.e. 1e6).
