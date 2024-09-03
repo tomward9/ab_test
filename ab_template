@@ -8,7 +8,9 @@ library(scales)
 ################### DATA INPUT ############################
 ###########################################################
 
-## Traffic Data ##                                           
+# Graph and chart axes may need to be manually altered depending on the values used below.
+
+## Traffic Data ##   
 control_total_visits <- 13566                            
 test_total_visits <- 13522                          
 control_conversions <- 5980                              
