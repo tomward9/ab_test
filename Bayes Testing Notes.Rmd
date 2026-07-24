@@ -327,4 +327,3 @@ o <- df_diff %>%
 
 grid.arrange(l,o,nrow = 1, ncol = 2)
 ```
-# 
